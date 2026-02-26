@@ -6,8 +6,7 @@ export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-  
-  // Typewriter state
+  const isLoadingRef = useRef(false);
   const fullContentRef = useRef("");
   const displayedRef = useRef("");
   const rafRef = useRef<number | null>(null);
@@ -18,7 +17,6 @@ export function useChat() {
     const displayed = displayedRef.current;
 
     if (displayed.length < full.length) {
-      // Reveal 1-3 characters per frame for natural feel
       const charsToAdd = Math.min(
         Math.floor(Math.random() * 3) + 1,
         full.length - displayed.length
@@ -37,18 +35,10 @@ export function useChat() {
       });
     }
 
-    // Keep ticking if there's more to reveal or stream is still going
-    if (displayed.length < full.length || isLoadingRef.current) {
-      const now = performance.now();
-      const delay = 16; // ~60fps
-      if (now - lastFrameRef.current >= delay) {
-        lastFrameRef.current = now;
-      }
+    if (displayedRef.current.length < fullContentRef.current.length || isLoadingRef.current) {
       rafRef.current = requestAnimationFrame(tickTypewriter);
     }
   }, []);
-
-  const isLoadingRef = useRef(false);
 
   const startTypewriter = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -60,7 +50,6 @@ export function useChat() {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
-    // Flush remaining content
     const full = fullContentRef.current;
     if (full && displayedRef.current !== full) {
       displayedRef.current = full;
@@ -104,7 +93,6 @@ export function useChat() {
       },
       onDone: () => {
         isLoadingRef.current = false;
-        // Let typewriter finish revealing remaining content
         setTimeout(() => {
           stopTypewriter();
           setIsLoading(false);
